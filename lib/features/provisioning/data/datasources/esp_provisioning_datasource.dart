@@ -73,8 +73,8 @@ class EspProvisioningDataSource {
             body: {
               'ssid': credentials.ssid,
               'password': credentials.password,
-              'serverIP': credentials.serverIP ?? '',
-              'serverPort': credentials.serverPort?.toString() ?? '3000',
+              'serverIP': credentials.serverIP,
+              'serverPort': credentials.serverPort.toString(),
             },
           )
           .timeout(const Duration(seconds: 30));
