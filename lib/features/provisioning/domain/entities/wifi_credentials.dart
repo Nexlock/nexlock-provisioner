@@ -1,22 +1,22 @@
 class WiFiCredentials {
   final String ssid;
   final String password;
-  final String? serverIP;
-  final int? serverPort;
+  final String serverIP;
+  final int serverPort;
 
   const WiFiCredentials({
     required this.ssid,
     required this.password,
-    this.serverIP,
-    this.serverPort,
+    required this.serverIP,
+    this.serverPort = 3000,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'ssid': ssid,
       'password': password,
-      if (serverIP != null) 'serverIP': serverIP,
-      if (serverPort != null) 'serverPort': serverPort,
+      'serverIP': serverIP,
+      'serverPort': serverPort,
     };
   }
 
