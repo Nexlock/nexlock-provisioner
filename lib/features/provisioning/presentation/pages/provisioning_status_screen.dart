@@ -8,8 +8,9 @@ class ProvisioningStatusScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final status = ref.watch(provisioningStatusProvider);
-    final selectedModule = ref.watch(selectedModuleProvider);
+    final provisioningState = ref.watch(wifiProvisioningProvider);
+    final status = provisioningState.status;
+    final selectedModule = provisioningState.selectedModule;
 
     return Scaffold(
       appBar: AppBar(
@@ -28,6 +29,20 @@ class ProvisioningStatusScreen extends ConsumerWidget {
             _buildStatusTitle(status),
             const SizedBox(height: 16),
             _buildStatusMessage(status, selectedModule?.name),
+            if (provisioningState.errorMessage != null) ...[
+              const SizedBox(height: 16),
+              Card(
+                color: Colors.red.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    provisioningState.errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 48),
             if (status == ProvisioningStatus.success) ...[
               Card(
@@ -212,11 +227,8 @@ class ProvisioningStatusScreen extends ConsumerWidget {
   }
 
   void _resetAndGoHome(BuildContext context, WidgetRef ref) {
-    // Reset providers
-    ref.read(selectedModuleProvider.notifier).state = null;
-    ref.read(isConnectedProvider.notifier).state = false;
-    ref.read(provisioningStatusProvider.notifier).state =
-        ProvisioningStatus.idle;
+    // Reset provisioning state
+    ref.read(wifiProvisioningProvider.notifier).reset();
 
     // Navigate to home
     context.go('/home');

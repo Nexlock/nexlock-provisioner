@@ -19,7 +19,6 @@ class _WiFiCredentialsScreenState extends ConsumerState<WiFiCredentialsScreen> {
   final _serverIPController = TextEditingController(text: '192.168.1.100');
   final _serverPortController = TextEditingController(text: '3000');
   bool _isPasswordVisible = false;
-  bool _isProvisioning = false;
 
   @override
   void dispose() {
@@ -30,43 +29,25 @@ class _WiFiCredentialsScreenState extends ConsumerState<WiFiCredentialsScreen> {
     super.dispose();
   }
 
-  Future<void> _provisionWiFi() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isProvisioning = true);
-
-    final credentials = WiFiCredentials(
-      ssid: _ssidController.text.trim(),
-      password: _passwordController.text,
-      serverIP: _serverIPController.text.trim(),
-      serverPort: int.tryParse(_serverPortController.text) ?? 3000,
-    );
-
-    final provisionUseCase = ref.read(provisionWiFiProvider);
-    final success = await provisionUseCase(credentials);
-
-    setState(() => _isProvisioning = false);
-
-    if (success) {
-      ref.read(provisioningStatusProvider.notifier).state =
-          ProvisioningStatus.success;
-      if (mounted) {
-        context.go('/provisioning-status');
-      }
-    } else {
-      ref.read(provisioningStatusProvider.notifier).state =
-          ProvisioningStatus.error;
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to provision WiFi credentials')),
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final selectedModule = ref.watch(selectedModuleProvider);
+    final provisioningState = ref.watch(wifiProvisioningProvider);
+    final selectedModule = provisioningState.selectedModule;
+
+    // Listen to provisioning status changes
+    ref.listen<WiFiProvisioningState>(wifiProvisioningProvider, (
+      previous,
+      current,
+    ) {
+      if (current.status == ProvisioningStatus.success) {
+        context.go('/provisioning-status');
+      } else if (current.status == ProvisioningStatus.error &&
+          current.errorMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(current.errorMessage!)));
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(
@@ -189,7 +170,10 @@ class _WiFiCredentialsScreenState extends ConsumerState<WiFiCredentialsScreen> {
               ),
               const SizedBox(height: 32),
               ElevatedButton(
-                onPressed: _isProvisioning ? null : _provisionWiFi,
+                onPressed:
+                    provisioningState.status == ProvisioningStatus.provisioning
+                        ? null
+                        : _provisionWiFi,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E88E5),
                   foregroundColor: Colors.white,
@@ -199,7 +183,7 @@ class _WiFiCredentialsScreenState extends ConsumerState<WiFiCredentialsScreen> {
                   ),
                 ),
                 child:
-                    _isProvisioning
+                    provisioningState.status == ProvisioningStatus.provisioning
                         ? const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -212,7 +196,7 @@ class _WiFiCredentialsScreenState extends ConsumerState<WiFiCredentialsScreen> {
                               ),
                             ),
                             SizedBox(width: 12),
-                            Text('Provisioning...'),
+                            Text('Provisioning WiFi...'),
                           ],
                         )
                         : const Text(
@@ -225,5 +209,20 @@ class _WiFiCredentialsScreenState extends ConsumerState<WiFiCredentialsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _provisionWiFi() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    final credentials = WiFiCredentials(
+      ssid: _ssidController.text.trim(),
+      password: _passwordController.text,
+      serverIP: _serverIPController.text.trim(),
+      serverPort: int.tryParse(_serverPortController.text) ?? 3000,
+    );
+
+    await ref
+        .read(wifiProvisioningProvider.notifier)
+        .provisionWiFi(credentials);
   }
 }

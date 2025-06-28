@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:esp_provisioning_wifi/esp_provisioning_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'core/di/dependency_injection.dart';
 import 'features/provisioning/presentation/pages/splash_screen.dart';
 import 'features/provisioning/presentation/pages/home_screen.dart';
 import 'features/provisioning/presentation/pages/wifi_credentials_screen.dart';
@@ -18,17 +17,14 @@ class NexLockProvisionerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => EspProvisioningBloc(),
-      child: MaterialApp.router(
-        title: 'NexLock Provisioner',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          primaryColor: const Color(0xFF1E88E5),
-          visualDensity: VisualDensity.adaptivePlatformDensity,
-        ),
-        routerConfig: _router,
+    return MaterialApp.router(
+      title: 'NexLock Provisioner',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        primaryColor: const Color(0xFF1E88E5),
+        visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
+      routerConfig: _router,
     );
   }
 }
